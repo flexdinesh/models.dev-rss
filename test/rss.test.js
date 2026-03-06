@@ -48,6 +48,12 @@ test("buildFeed produces valid RSS XML and expected item ordering", () => {
 
   const validation = XMLValidator.validate(rss);
   assert.equal(validation, true, "RSS XML should be valid");
+  assert.match(rss, /xmlns:content="http:\/\/purl\.org\/rss\/1\.0\/modules\/content\/"/);
+  assert.doesNotMatch(rss, /<description><!\[CDATA\[/);
+  assert.match(rss, /<content:encoded><!\[CDATA\[/);
+  assert.match(rss, /<description>Provider: Beta &amp; Co/);
+  assert.match(rss, /Model ID: beta\/new-model/);
+  assert.match(rss, /model\.nested\.enabled: true<br \/>/);
 
   const parser = new XMLParser({ ignoreAttributes: false });
   const parsed = parser.parse(rss);
@@ -60,6 +66,8 @@ test("buildFeed produces valid RSS XML and expected item ordering", () => {
   assert.equal(items[0].title, "Beta & Co: New <Model>");
   assert.equal(items[0].pubDate, "Sat, 14 Feb 2026 00:00:00 GMT");
   assert.match(items[0].description, /model\.nested\.enabled: true/);
+  assert.doesNotMatch(items[0].description, /<br \/>/);
+  assert.match(items[0]["content:encoded"], /model\.nested\.enabled: true<br \/>/);
   assert.match(items[0].description, /model\.limit\.context: 200000/);
   assert.match(items[0].description, /model\.limit\.output: 8000/);
 

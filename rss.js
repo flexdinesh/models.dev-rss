@@ -5,8 +5,12 @@ function escapeXml(value) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
+    .replace(/\"/g, "&quot;")
     .replace(/'/g, "&apos;");
+}
+
+function wrapCdata(value) {
+  return `<![CDATA[${String(value).replaceAll("]]>", "]]]]><![CDATA[>")}]]>`;
 }
 
 function releaseDateToEpoch(releaseDate) {
@@ -82,6 +86,10 @@ function modelDescription(item) {
     .join("\n");
 }
 
+function modelDescriptionHtml(item) {
+  return escapeXml(modelDescription(item)).replaceAll("\n", "<br />\n");
+}
+
 export function buildFeed(data, { origin, maxItems = DEFAULT_MAX_ITEMS } = {}) {
   const providers = Object.entries(data || {});
   const items = [];
@@ -114,11 +122,14 @@ export function buildFeed(data, { origin, maxItems = DEFAULT_MAX_ITEMS } = {}) {
     .map((item) => {
       const guid = `${item.providerId}/${item.modelId}`;
       const link = `https://models.dev/providers/${encodeURIComponent(item.providerId)}`;
+      const plainDescription = modelDescription(item);
+      const richDescription = modelDescriptionHtml(item);
       return [
         "    <item>",
         `      <title>${escapeXml(`${item.provider}: ${item.modelName}`)}</title>`,
-        `      <description>${escapeXml(modelDescription(item))}</description>`,
-        `      <guid isPermaLink="false">${escapeXml(guid)}</guid>`,
+        `      <description>${escapeXml(plainDescription)}</description>`,
+        `      <content:encoded>${wrapCdata(richDescription)}</content:encoded>`,
+        `      <guid isPermaLink=\"false\">${escapeXml(guid)}</guid>`,
         `      <link>${escapeXml(link)}</link>`,
         `      <pubDate>${releaseDateToPubDate(item.releaseDate)}</pubDate>`,
         "    </item>",
@@ -128,7 +139,7 @@ export function buildFeed(data, { origin, maxItems = DEFAULT_MAX_ITEMS } = {}) {
 
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<rss version="2.0">',
+    '<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">',
     "  <channel>",
     `    <title>${escapeXml(channelTitle)}</title>`,
     `    <link>${escapeXml(channelLink)}</link>`,
