@@ -7,6 +7,8 @@ Built with Hono so the same app runs on Node and Cloudflare Workers.
 
 ```bash
 npm run start
+# to test
+npm run test
 ```
 
 Local check URLs (Node server):
