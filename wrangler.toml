@@ -1,0 +1,3 @@
+name = "models-dev-rss"
+main = "worker.js"
+compatibility_date = "2026-03-06"
