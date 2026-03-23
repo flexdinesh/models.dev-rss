@@ -40,6 +40,64 @@ const fixture = {
   },
 };
 
+const titleFixture = {
+  openai: {
+    id: "openai",
+    name: "OpenAI",
+    models: {
+      "openai/model": {
+        id: "openai/model",
+        name: "OpenAI Model",
+        release_date: "2026-01-01",
+      },
+    },
+  },
+  openrouter: {
+    id: "openrouter",
+    name: "OpenRoute",
+    models: {
+      "openrouter/model": {
+        id: "openrouter/model",
+        name: "OpenRoute Model",
+        release_date: "2026-01-02",
+      },
+    },
+  },
+  opencode: {
+    id: "opencode",
+    name: "OpenCode",
+    models: {
+      "opencode/model": {
+        id: "opencode/model",
+        name: "OpenCode Model",
+        release_date: "2026-01-03",
+      },
+    },
+  },
+  zai: {
+    id: "zai",
+    name: "Zai",
+    models: {
+      "zai/model": {
+        id: "zai/model",
+        name: "Zai Model",
+        release_date: "2026-01-04",
+      },
+    },
+  },
+  anthropic: {
+    id: "anthropic",
+    name: "Anthropic",
+    models: {
+      "anthropic/model": {
+        id: "anthropic/model",
+        name: "Anthropic Model",
+        release_date: "2026-01-05",
+      },
+    },
+  },
+};
+
 test("buildFeed produces valid RSS XML and expected item ordering", () => {
   const rss = buildFeed(fixture, {
     origin: "https://rss.local",
@@ -92,9 +150,32 @@ test("buildFeed filters by providerId values", () => {
   const parsed = parser.parse(rss);
   const items = toItems(parsed);
 
+  assert.equal(
+    parsed.rss.channel.title,
+    "models.dev LLM Catalog - Beta & Co, Alpha Provider"
+  );
   assert.equal(items.length, 2);
   assert.equal(items[0].title, "Beta & Co: New <Model>");
   assert.equal(items[1].title, "Alpha Provider: Old Model");
+});
+
+test("buildFeed caps title provider names at four and appends etc", () => {
+  const rss = buildFeed(titleFixture, {
+    origin: "https://rss.local",
+    maxItems: 10,
+    providerIds: ["zai", "openai", "openrouter", "opencode", "anthropic"],
+  });
+
+  const validation = XMLValidator.validate(rss);
+  assert.equal(validation, true, "RSS XML should be valid");
+
+  const parser = new XMLParser({ ignoreAttributes: false });
+  const parsed = parser.parse(rss);
+
+  assert.equal(
+    parsed.rss.channel.title,
+    "models.dev LLM Catalog - Zai, OpenAI, OpenRoute, OpenCode, etc"
+  );
 });
 
 test("buildFeed returns an empty feed when providerId does not match", () => {
@@ -106,5 +187,8 @@ test("buildFeed returns an empty feed when providerId does not match", () => {
 
   const validation = XMLValidator.validate(rss);
   assert.equal(validation, true, "empty filtered RSS XML should be valid");
+  const parser = new XMLParser({ ignoreAttributes: false });
+  const parsed = parser.parse(rss);
+  assert.equal(parsed.rss.channel.title, "models.dev LLM Catalog");
   assert.doesNotMatch(rss, /<item>/);
 });

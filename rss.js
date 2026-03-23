@@ -97,11 +97,79 @@ function normalizeProviderIds(providerIds) {
       ? [providerIds]
       : [];
 
-  return new Set(
-    values
-      .map((value) => (typeof value === "string" ? value.trim() : ""))
-      .filter(Boolean)
-  );
+  const normalized = [];
+  const seen = new Set();
+
+  for (const value of values) {
+    const trimmed = typeof value === "string" ? value.trim() : "";
+    if (!trimmed || seen.has(trimmed)) {
+      continue;
+    }
+
+    seen.add(trimmed);
+    normalized.push(trimmed);
+  }
+
+  return normalized;
+}
+
+function buildProviderEntries(data) {
+  return Object.entries(data || {}).map(([providerKey, provider]) => {
+    const providerId = provider?.id || providerKey;
+    return {
+      providerKey,
+      providerId,
+      providerName: provider?.name || providerKey,
+      api: provider?.api || "",
+      models: provider?.models || {},
+    };
+  });
+}
+
+function resolveSelectedProviders(providerEntries, providerIds) {
+  if (providerIds.length === 0) {
+    return [];
+  }
+
+  const lookup = new Map();
+  for (const entry of providerEntries) {
+    if (!lookup.has(entry.providerKey)) {
+      lookup.set(entry.providerKey, entry);
+    }
+    if (!lookup.has(entry.providerId)) {
+      lookup.set(entry.providerId, entry);
+    }
+  }
+
+  const selected = [];
+  const seen = new Set();
+
+  for (const providerId of providerIds) {
+    const entry = lookup.get(providerId);
+    if (!entry || seen.has(entry.providerId)) {
+      continue;
+    }
+
+    seen.add(entry.providerId);
+    selected.push(entry);
+  }
+
+  return selected;
+}
+
+function buildChannelTitle(baseTitle, selectedProviders) {
+  if (selectedProviders.length === 0) {
+    return baseTitle;
+  }
+
+  const titleParts = selectedProviders
+    .slice(0, 4)
+    .map((provider) => provider.providerName);
+  if (selectedProviders.length > 4) {
+    titleParts.push("etc");
+  }
+
+  return `${baseTitle} - ${titleParts.join(", ")}`;
 }
 
 export function buildFeed(
@@ -109,26 +177,30 @@ export function buildFeed(
   { origin, maxItems = DEFAULT_MAX_ITEMS, providerIds = [] } = {}
 ) {
   const selectedProviderIds = normalizeProviderIds(providerIds);
-  const providers = Object.entries(data || {});
+  const providerEntries = buildProviderEntries(data);
+  const selectedProviders = resolveSelectedProviders(
+    providerEntries,
+    selectedProviderIds
+  );
+  const selectedProviderIdSet = new Set(selectedProviderIds);
   const items = [];
 
-  for (const [providerKey, provider] of providers) {
-    const providerId = provider?.id || providerKey;
+  for (const provider of providerEntries) {
     if (
-      selectedProviderIds.size > 0 &&
-      !selectedProviderIds.has(providerKey) &&
-      !selectedProviderIds.has(providerId)
+      selectedProviderIdSet.size > 0 &&
+      !selectedProviderIdSet.has(provider.providerKey) &&
+      !selectedProviderIdSet.has(provider.providerId)
     ) {
       continue;
     }
 
-    for (const [modelKey, model] of Object.entries(provider?.models || {})) {
+    for (const [modelKey, model] of Object.entries(provider.models)) {
       items.push({
-        provider: provider?.name || providerKey,
-        providerId,
+        provider: provider.providerName,
+        providerId: provider.providerId,
         modelId: model?.id || modelKey,
         modelName: model?.name || modelKey,
-        api: provider?.api || "",
+        api: provider.api,
         releaseDate: model?.release_date || "",
         releaseDateEpoch: releaseDateToEpoch(model?.release_date),
         modelData: model || {},
@@ -141,7 +213,10 @@ export function buildFeed(
     .slice(0, maxItems);
 
   const now = new Date().toUTCString();
-  const channelTitle = "models.dev LLM Catalog";
+  const channelTitle = buildChannelTitle(
+    "models.dev LLM Catalog",
+    selectedProviders
+  );
   const channelLink = `${origin}/rss`;
   const channelDescription = "RSS mirror generated from https://models.dev/api.json";
 
