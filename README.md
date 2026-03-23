@@ -26,6 +26,7 @@ Optional environment variables:
 
 - `GET /` plain text usage hint
 - `GET /rss` fetches `api.json`, converts to RSS 2.0, returns `application/rss+xml`
+- `GET /rss?providerId=openai&providerId=openrouter` filters the feed to matching upstream provider ids
 
 ## Cloudflare Worker
 

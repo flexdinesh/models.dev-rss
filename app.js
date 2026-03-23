@@ -47,6 +47,12 @@ function resolveFeedBaseUrl(c) {
   return new URL(c.req.url).origin;
 }
 
+function resolveProviderIds(c) {
+  return (c.req.queries("providerId") || [])
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 app.get("/", (c) => c.text("Use /rss\n"));
 
 app.get("/rss", async (c) => {
@@ -61,7 +67,11 @@ app.get("/rss", async (c) => {
 
     const data = await upstream.json();
     const origin = resolveFeedBaseUrl(c);
-    const rss = buildFeed(data, { origin, maxItems: resolveMaxItems(c) });
+    const rss = buildFeed(data, {
+      origin,
+      maxItems: resolveMaxItems(c),
+      providerIds: resolveProviderIds(c),
+    });
 
     return c.body(rss, 200, {
       "content-type": "application/rss+xml; charset=utf-8",

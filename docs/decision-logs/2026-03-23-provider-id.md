@@ -1,0 +1,20 @@
+# Decision Log: `providerId` RSS filtering
+
+## What
+- Added optional `providerId` filtering to `GET /rss`.
+- The endpoint accepts repeated `providerId` query params, for example `?providerId=openai&providerId=openrouter`.
+- Filtering matches upstream provider ids exactly and returns an empty RSS feed when nothing matches.
+- The implementation is centralized in `rss.js`, with request parsing in `app.js`, and covered by static RSS tests.
+
+## Why
+- The RSS feed is generated on demand from `models.dev/api.json`, so filtering at request time keeps the server stateless and CDN-friendly.
+- Provider ids are stable identifiers, which makes them a better filter key than human-readable provider names.
+- Repeated query params preserve a simple, standard URL shape for multiple providers without introducing custom parsing rules.
+- Returning a valid empty feed is safer than an error response because it keeps the endpoint predictable for consumers.
+
+## How
+- `app.js` reads `c.req.queries("providerId")`, trims values, removes empties, and forwards the resulting list to `buildFeed`.
+- `rss.js` normalizes the incoming provider id list and filters upstream providers before flattening models into RSS items.
+- Existing item ordering remains unchanged because sorting still happens on `release_date` descending after filtering.
+- `test/rss.test.js` verifies the unfiltered feed, filtered output, and empty-result behavior with fixed fixture data.
+- `README.md` documents the new query parameter so consumers know how to use the endpoint.

@@ -8,39 +8,39 @@ function toItems(parsedRss) {
   return Array.isArray(raw) ? raw : [raw];
 }
 
-test("buildFeed produces valid RSS XML and expected item ordering", () => {
-  const fixture = {
-    alpha: {
-      id: "alpha",
-      name: "Alpha Provider",
-      api: "https://alpha.example/api",
-      models: {
-        "alpha/old-model": {
-          id: "alpha/old-model",
-          name: "Old Model",
-          release_date: "2025-12-31",
-          family: "old",
-          limit: { context: 4096, output: 512 },
-          tags: ["legacy", "stable"],
-        },
+const fixture = {
+  alpha: {
+    id: "alpha",
+    name: "Alpha Provider",
+    api: "https://alpha.example/api",
+    models: {
+      "alpha/old-model": {
+        id: "alpha/old-model",
+        name: "Old Model",
+        release_date: "2025-12-31",
+        family: "old",
+        limit: { context: 4096, output: 512 },
+        tags: ["legacy", "stable"],
       },
     },
-    beta: {
-      id: "beta",
-      name: "Beta & Co",
-      models: {
-        "beta/new-model": {
-          id: "beta/new-model",
-          name: "New <Model>",
-          release_date: "2026-02-14",
-          family: "new",
-          limit: { context: 200000, output: 8000 },
-          nested: { enabled: true, threshold: 0.7 },
-        },
+  },
+  beta: {
+    id: "beta",
+    name: "Beta & Co",
+    models: {
+      "beta/new-model": {
+        id: "beta/new-model",
+        name: "New <Model>",
+        release_date: "2026-02-14",
+        family: "new",
+        limit: { context: 200000, output: 8000 },
+        nested: { enabled: true, threshold: 0.7 },
       },
     },
-  };
+  },
+};
 
+test("buildFeed produces valid RSS XML and expected item ordering", () => {
   const rss = buildFeed(fixture, {
     origin: "https://rss.local",
     maxItems: 10,
@@ -76,4 +76,35 @@ test("buildFeed produces valid RSS XML and expected item ordering", () => {
   assert.match(items[1].description, /model\.tags: \["legacy", "stable"\]/);
   assert.match(items[1].description, /model\.limit\.context: 4096/);
   assert.match(items[1].description, /model\.limit\.output: 512/);
+});
+
+test("buildFeed filters by providerId values", () => {
+  const rss = buildFeed(fixture, {
+    origin: "https://rss.local",
+    maxItems: 10,
+    providerIds: ["", "beta", "alpha", "beta"],
+  });
+
+  const validation = XMLValidator.validate(rss);
+  assert.equal(validation, true, "filtered RSS XML should be valid");
+
+  const parser = new XMLParser({ ignoreAttributes: false });
+  const parsed = parser.parse(rss);
+  const items = toItems(parsed);
+
+  assert.equal(items.length, 2);
+  assert.equal(items[0].title, "Beta & Co: New <Model>");
+  assert.equal(items[1].title, "Alpha Provider: Old Model");
+});
+
+test("buildFeed returns an empty feed when providerId does not match", () => {
+  const rss = buildFeed(fixture, {
+    origin: "https://rss.local",
+    maxItems: 10,
+    providerIds: ["missing"],
+  });
+
+  const validation = XMLValidator.validate(rss);
+  assert.equal(validation, true, "empty filtered RSS XML should be valid");
+  assert.doesNotMatch(rss, /<item>/);
 });

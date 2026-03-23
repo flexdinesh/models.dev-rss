@@ -90,15 +90,42 @@ function modelDescriptionHtml(item) {
   return escapeXml(modelDescription(item)).replaceAll("\n", "<br />\n");
 }
 
-export function buildFeed(data, { origin, maxItems = DEFAULT_MAX_ITEMS } = {}) {
+function normalizeProviderIds(providerIds) {
+  const values = Array.isArray(providerIds)
+    ? providerIds
+    : typeof providerIds === "string"
+      ? [providerIds]
+      : [];
+
+  return new Set(
+    values
+      .map((value) => (typeof value === "string" ? value.trim() : ""))
+      .filter(Boolean)
+  );
+}
+
+export function buildFeed(
+  data,
+  { origin, maxItems = DEFAULT_MAX_ITEMS, providerIds = [] } = {}
+) {
+  const selectedProviderIds = normalizeProviderIds(providerIds);
   const providers = Object.entries(data || {});
   const items = [];
 
   for (const [providerKey, provider] of providers) {
+    const providerId = provider?.id || providerKey;
+    if (
+      selectedProviderIds.size > 0 &&
+      !selectedProviderIds.has(providerKey) &&
+      !selectedProviderIds.has(providerId)
+    ) {
+      continue;
+    }
+
     for (const [modelKey, model] of Object.entries(provider?.models || {})) {
       items.push({
         provider: provider?.name || providerKey,
-        providerId: provider?.id || providerKey,
+        providerId,
         modelId: model?.id || modelKey,
         modelName: model?.name || modelKey,
         api: provider?.api || "",
