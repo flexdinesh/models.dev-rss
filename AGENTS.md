@@ -22,6 +22,7 @@
 
 ## Feed Behavior Requirements
 
+- Endpoint: `GET /health` returns JSON liveness status and does not call upstream.
 - Endpoint: `GET /rss` returns RSS 2.0 XML (`application/rss+xml`).
 - Source data: fetch `https://models.dev/api.json` on request.
 - Items are sorted by `model.release_date` descending (latest first).

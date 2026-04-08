@@ -17,6 +17,7 @@ npm run test
 Local check URLs (Node server):
 
 - `http://localhost:3000/`
+- `http://localhost:3000/health`
 - `http://localhost:3000/rss`
 
 Optional environment variables:
@@ -118,6 +119,7 @@ npm run start
 ## Endpoints
 
 - `GET /` plain text usage hint
+- `GET /health` returns JSON liveness status without calling upstream
 - `GET /rss` fetches `api.json`, converts to RSS 2.0, returns `application/rss+xml`
 - `GET /rss?providerId=openai&providerId=openrouter` filters the feed to matching upstream provider ids and appends the matched provider names to the channel title
 
@@ -131,6 +133,7 @@ npm run deploy
 Local check URLs (Wrangler dev):
 
 - `http://localhost:8787/`
+- `http://localhost:8787/health`
 - `http://localhost:8787/rss`
 
 For Worker `MAX_ITEMS`, add it as an env var in `wrangler.toml`:

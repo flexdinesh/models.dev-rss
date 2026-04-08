@@ -55,6 +55,8 @@ function resolveProviderIds(c) {
 
 app.get("/", (c) => c.text("Use /rss\n"));
 
+app.get("/health", (c) => c.json({ ok: true }));
+
 app.get("/rss", async (c) => {
   try {
     const upstream = await fetch(SOURCE_URL, {
