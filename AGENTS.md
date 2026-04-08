@@ -16,6 +16,7 @@
 - Shared business logic lives in `rss.js` (`buildFeed`).
 - Routing and upstream fetch live in `app.js` (Hono app).
 - `server.js` is a thin Node entrypoint using `@hono/node-server`.
+- `Dockerfile` packages the Node server only as a multi-arch container image (`linux/amd64` and `linux/arm64`).
 - `worker.js` is a thin Cloudflare Worker entrypoint exporting the same app.
 - Keep logic centralized in `rss.js`/`app.js`; avoid duplicating behavior across runtimes.
 
@@ -37,6 +38,7 @@
   - `OTEL_EXPORTER_OTLP_ENDPOINT` sets a shared OTLP traces+metrics backend endpoint
   - `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` may be used instead of the shared endpoint, but both must be set together
   - `OTEL_SERVICE_NAME` (optional) overrides the default service name `models.dev-rss`
+  - Docker image and GHCR publish path support `linux/amd64` and `linux/arm64`
 - Cloudflare Worker:
   - `MAX_ITEMS` from Wrangler `[vars]` (fallback default `1000`)
   - `FEED_BASE_URL` from Wrangler `[vars]` (optional)

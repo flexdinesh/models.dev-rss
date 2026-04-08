@@ -1,0 +1,11 @@
+.ai/
+.git/
+.github/
+AGENTS.md
+README.md
+docs/
+node_modules/
+npm-debug.log
+test/
+worker.js
+wrangler.toml

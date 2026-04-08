@@ -4,6 +4,7 @@ Minimal server that converts `https://models.dev/api.json` into RSS on demand.
 Built with Hono so the same app runs on Node and Cloudflare Workers.
 
 Node runtime can optionally emit OpenTelemetry traces and metrics.
+The Docker image in this repo is for the Node server only and publishes `linux/amd64` and `linux/arm64` variants.
 
 ## Run
 
@@ -28,6 +29,72 @@ Optional environment variables:
 - `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` optional trace endpoint when not using shared endpoint
 - `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` optional metrics endpoint when not using shared endpoint
 - `OTEL_SERVICE_NAME` (optional) overrides the default service name `models.dev-rss`
+
+## Docker (`linux/amd64` + `linux/arm64`)
+
+Build for your local platform:
+
+```bash
+docker build -t models.dev-rss:local .
+```
+
+Build a specific target architecture:
+
+```bash
+docker build --platform linux/amd64 -t models.dev-rss:amd64 .
+docker build --platform linux/arm64 -t models.dev-rss:arm64 .
+```
+
+Run it:
+
+```bash
+docker run --rm \
+  -p 3000:3000 \
+  models.dev-rss:local
+```
+
+All Node env vars work the same in Docker:
+
+```bash
+docker run --rm \
+  -p 8080:8080 \
+  -e PORT=8080 \
+  -e MAX_ITEMS=250 \
+  -e FEED_BASE_URL=https://rss.example.com \
+  -e OTEL_ENABLED=true \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT=https://otel.example/v1 \
+  -e OTEL_SERVICE_NAME=models-dev-rss \
+  models.dev-rss:local
+```
+
+If you change `PORT`, match the published port mapping to the container port.
+
+On a different host architecture, pass `--platform linux/amd64` or `--platform linux/arm64` explicitly.
+
+## GitHub Container Registry (`linux/amd64` + `linux/arm64`)
+
+GitHub Actions publishes a multi-arch image to `ghcr.io/flexdinesh/models.dev-rss`.
+
+Workflow:
+
+- `Publish Docker image (amd64 + arm64)`
+
+Tags:
+
+- `sha-<full-commit-sha>` on every `main` push
+- `latest` on the default branch
+
+Pull and run the published image:
+
+```bash
+docker pull ghcr.io/flexdinesh/models.dev-rss:latest
+
+docker run --rm \
+  -p 3000:3000 \
+  ghcr.io/flexdinesh/models.dev-rss:latest
+```
+
+If you need a specific published target, pull or run with `--platform linux/amd64` or `--platform linux/arm64`.
 
 ## OpenTelemetry
 
