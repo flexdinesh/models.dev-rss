@@ -3,6 +3,8 @@
 Minimal server that converts `https://models.dev/api.json` into RSS on demand.
 Built with Hono so the same app runs on Node and Cloudflare Workers.
 
+Node runtime can optionally emit OpenTelemetry traces and metrics.
+
 ## Run
 
 ```bash
@@ -21,6 +23,30 @@ Optional environment variables:
 - `PORT` (default: `3000`)
 - `MAX_ITEMS` (default: `1000`) limits RSS item count
 - `FEED_BASE_URL` (optional) overrides feed links base URL
+- `OTEL_ENABLED` set to `true` to enable Node-only OpenTelemetry
+- `OTEL_EXPORTER_OTLP_ENDPOINT` shared OTLP backend endpoint for traces and metrics
+- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` optional trace endpoint when not using shared endpoint
+- `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` optional metrics endpoint when not using shared endpoint
+- `OTEL_SERVICE_NAME` (optional) overrides the default service name `models.dev-rss`
+
+## OpenTelemetry
+
+- Node server only. Worker runtime stays uninstrumented.
+- Disabled by default.
+- Uses OpenTelemetry auto-instrumentation.
+- When `OTEL_ENABLED=true`, you must set either:
+  - `OTEL_EXPORTER_OTLP_ENDPOINT`, or
+  - both `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`
+- If OTel config is invalid or SDK init fails, the server logs a warning and keeps serving traffic.
+
+Example:
+
+```bash
+OTEL_ENABLED=true \
+OTEL_EXPORTER_OTLP_ENDPOINT=https://otel.example/v1 \
+OTEL_SERVICE_NAME=models-dev-rss \
+npm run start
+```
 
 ## Endpoints
 

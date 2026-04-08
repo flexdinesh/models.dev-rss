@@ -1,6 +1,12 @@
 #!/usr/bin/env node
-import { serve } from "@hono/node-server";
-import app from "./app.js";
+import { startOpenTelemetry } from "./otel.js";
+
+startOpenTelemetry();
+
+const [{ serve }, { default: app }] = await Promise.all([
+  import("@hono/node-server"),
+  import("./app.js"),
+]);
 
 const port = Number(process.env.PORT || 3000);
 

@@ -33,9 +33,14 @@
   - `PORT` (default `3000`)
   - `MAX_ITEMS` (default `1000`)
   - `FEED_BASE_URL` (optional override for feed link base URL)
+  - `OTEL_ENABLED=true` enables Node-only OpenTelemetry
+  - `OTEL_EXPORTER_OTLP_ENDPOINT` sets a shared OTLP traces+metrics backend endpoint
+  - `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` may be used instead of the shared endpoint, but both must be set together
+  - `OTEL_SERVICE_NAME` (optional) overrides the default service name `models.dev-rss`
 - Cloudflare Worker:
   - `MAX_ITEMS` from Wrangler `[vars]` (fallback default `1000`)
   - `FEED_BASE_URL` from Wrangler `[vars]` (optional)
+  - no OpenTelemetry runtime support
 
 ## Testing
 
@@ -46,3 +51,4 @@
 ## Notes for changes
 
 - After every change that introduces changes to architecture or behavior, update the AGENTS.md, README.md file to reflect the latest state of the project if they are outdated.
+- Node OpenTelemetry should stay isolated to the Node server entrypoint and use auto-instrumentation; do not add it to the Worker runtime.
